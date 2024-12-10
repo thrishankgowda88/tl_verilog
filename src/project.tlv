@@ -42,66 +42,44 @@
    m4_include_lib(https:/['']/raw.githubusercontent.com/efabless/chipcraft---mest-course/main/tlv_lib/calculator_shell_lib.tlv)
 
 \TLV calc()
-   
-   
-   |calc
-      @1
+    |calc
+      @0
          $reset = *reset;
-
-         $equals_in = *ui_in[7];
          $op[1:0] = *ui_in[5:4];
-         $val1[7:0] = >>1$out;
-         $val2[7:0] = {4'b0000, *ui_in[3:0]};
-         $out[7:0] =
-            $reset
-               ? 8'b0 :
-            ! $valid
-               ? >>1$out :
-            $op[1:0] == 2'b00
-               ? $val1 + $val2 :
-            $op[1:0] == 2'b01
-               ? $val1 - $val2 :
-            $op[1:0] == 2'b10
-               ? $val1 * $val2 :
-            //default
-                 $val1 / $val2;
-         
-         $valid = $equals_in && ! >>1$equals_in;
-         
+         $val2[7:0] = {4'b0,*ui_in[3:0]};
+         $equals_in = *ui_in[7];
+         //$op[1:0] = 0;
+         //$val2[7:0] = 1'b1;
+         $valid = $equals_in;
+         $val1[7:0] =  >>1$out;
+         $out[7:0] = $reset ? 
+             (8'b0) :
+             (!$valid ? 
+                (
+                 $op[1:0] == 2'b00 ? $val1 + $val2 :
+                 $op[1:0] == 2'b01 ? $val1 - $val2 :
+                 $op[1:0] == 2'b10 ? $val1 * $val2 : $val1 / $val2
+                 ) : ($out));
+            
          $digit[3:0] = $out[3:0];
-         *uo_out =
-            $digit == 4'b0000
-               ? 8'b00111111 :
-            $digit == 4'b0001
-               ? 8'b00000110 :
-            $digit == 4'b0010
-               ? 8'b01011011 :
-            $digit == 4'b0011
-               ? 8'b01001111 :
-            $digit == 4'b0100
-               ? 8'b01100110 :
-            $digit == 4'b0101
-               ? 8'b01101101 :
-            $digit == 4'b0110
-               ? 8'b01111101 :
-            $digit == 4'b0111
-               ? 8'b00000111 :
-            $digit == 4'b1000
-               ? 8'b01111111 :
-            $digit == 4'b1001
-               ? 8'b01101111 :
-            $digit == 4'b1010
-               ? 8'b01110111 :
-            $digit == 4'b1011
-               ? 8'b01111100 :
-            $digit == 4'b1100
-               ? 8'b00111001 :
-            $digit == 4'b1101
-               ? 8'b01011110 :
-            $digit == 4'b1110
-               ? 8'b01111001 :
-            //default
-                 8'b01110001 ; 
+         *uo_out = 
+            $digit == 4'b0000 ? 8'b00111111 :
+            $digit == 4'b0001 ? 8'b00000110 :
+            $digit == 4'd2 ? 8'b01011011 :
+            $digit == 4'd3 ? 8'b01001111 :
+            $digit == 4'd4 ? 8'b01100110 : 
+            $digit == 4'd5 ? 8'b01101101 :
+            $digit == 4'd6 ? 8'b01111101 :
+            $digit == 4'd7 ? 8'b00000111 :
+            $digit == 4'd8 ? 8'b01111111 :
+            $digit == 4'd9 ? 8'b01100111 :
+            $digit == 4'd10 ? 8'b01110111 :
+            $digit == 4'd11 ? 8'b01111100 :
+            $digit == 4'd12 ? 8'b00111001 :
+            $digit == 4'd13 ? 8'b01011110 :
+            $digit == 4'd14 ? 8'b01111001 :
+            $digit == 4'd15 ? 8'b01110001 : 8'b00111111;  
+   
    
    // Note that pipesignals assigned here can be found under /fpga_pins/fpga.
    
