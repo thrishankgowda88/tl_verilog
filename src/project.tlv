@@ -59,7 +59,7 @@
                  $op[1:0] == 2'b00 ? $val1 + $val2 :
                  $op[1:0] == 2'b01 ? $val1 - $val2 :
                  $op[1:0] == 2'b10 ? $val1 * $val2 : $val1 / $val2
-                 ) : ($out));
+                 ) : (>>1$out));
             
          $digit[3:0] = $out[3:0];
          *uo_out = 
