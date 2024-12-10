@@ -78,8 +78,8 @@
             $digit == 4'd12 ? 8'b00111001 :
             $digit == 4'd13 ? 8'b01011110 :
             $digit == 4'd14 ? 8'b01111001 :
-            $digit == 4'd15 ? 8'b01110001 : 8'b00111111;  
-   
+            $digit == 4'd15 ? 8'b01110001 : 8'b00111111;
+
    
    // Note that pipesignals assigned here can be found under /fpga_pins/fpga.
    
