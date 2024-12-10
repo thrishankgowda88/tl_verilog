@@ -42,7 +42,7 @@
    m4_include_lib(https:/['']/raw.githubusercontent.com/efabless/chipcraft---mest-course/main/tlv_lib/calculator_shell_lib.tlv)
 
 \TLV calc()
-    |calc
+   |calc
       @0
          $reset = *reset;
          $op[1:0] = *ui_in[5:4];
