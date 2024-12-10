@@ -50,7 +50,7 @@
          $equals_in = *ui_in[7];
          //$op[1:0] = 0;
          //$val2[7:0] = 1'b1;
-         $valid = $equals_in;
+         $valid = >>1$equals_in;
          $val1[7:0] =  >>1$out;
          $out[7:0] = $reset ? 
              (8'b0) :
