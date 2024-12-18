@@ -61,7 +61,8 @@
       @1
          
          m5+sseg_decoder($segments_n, /keypad$digit_pressed[3:0])
-         *uo_out[7:0] = {1'b0 , ~ $segments_n} ;   
+         *uo_out = /keypad$sampling ? {4'b0, /keypad$sample_row_mask} : {1'b0 , ~ $segments_n};
+         //*uo_out[7:0] = {1'b0 , ~ $segments_n} ;   
    // Note that pipesignals assigned here can be found under /fpga_pins/fpga.
    
    
