@@ -32,7 +32,9 @@
    // If debouncing, a user's module is within a wrapper, so it has a different name.
    var(user_module_name, m5_if(m5_debounce_inputs, my_design, m5_my_design))
    var(debounce_cnt, m5_if_defined_as(MAKERCHIP, 1, 8'h03, 8'hff))
-   m5_var(MAKERCHIP, 0)
+   //m5_var(MAKERCHIP, 0)
+   if_def(MAKERCHIP, , ['m5_var(MAKERCHIP, 0)'])
+
 \SV
    // Include Tiny Tapeout Lab.
    m4_include_lib(['https:/']['/raw.githubusercontent.com/os-fpga/Virtual-FPGA-Lab/5744600215af09224b7235479be84c30c6e50cb7/tlv_lib/tiny_tapeout_lib.tlv'])
@@ -61,8 +63,8 @@
       @1
          
          m5+sseg_decoder($segments_n, /keypad$digit_pressed[3:0])
+         //*uo_out[7:0] = {1'b0 , ~ $segments_n} ;
          *uo_out = /keypad$sampling ? {4'b0, /keypad$sample_row_mask} : {1'b0 , ~ $segments_n};
-         //*uo_out[7:0] = {1'b0 , ~ $segments_n} ;   
    // Note that pipesignals assigned here can be found under /fpga_pins/fpga.
    
    
@@ -163,3 +165,4 @@ module m5_user_module_name (
 
 \SV
 endmodule
+
