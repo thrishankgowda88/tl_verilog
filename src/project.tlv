@@ -36,7 +36,6 @@
 \SV
    // Include Tiny Tapeout Lab.
    m4_include_lib(['https:/']['/raw.githubusercontent.com/os-fpga/Virtual-FPGA-Lab/5744600215af09224b7235479be84c30c6e50cb7/tlv_lib/tiny_tapeout_lib.tlv'])
- 	//m4_include_lib(['https:/']['/raw.githubusercontent.com/os-fpga/Virtual-FPGA-Lab/5744600215af09224b7235479be84c30c6e50cb7/tlv_lib/tiny_tapeout_lib.tlv'])
    m4_include_lib(https://raw.githubusercontent.com/stevehoover/gian-course/9ce47c64c435ae69c2d2c3733f86abfe158d8276/reference_designs/PmodKYPD.tlv)
 	
 \TLV my_design()
@@ -109,18 +108,29 @@ module top(input logic clk, input logic reset, input logic [31:0] cyc_cnt, outpu
    end
    */
    logic [3:0] random_number;
- 	logic feed_back;
-	logic [3:0]lfsr;
+   logic feed_back;
+   logic [3:0]lfsr;
+	logic [3:0]count;
+   assign feed_back = lfsr[2] ^ lfsr[0] ;
+   assign random_number = lfsr;
+   
+   initial lfsr = 1'd1;
+   
+   always @(posedge clk)begin
+      if(reset)
+         count = 0;
+      else if (count == 'hF) 
+         count = 0;
+      else
+         count = count + 1;
+      end
 
-	assign feed_back = lfsr[2] ^ lfsr[0] ;
-	assign random_number = lfsr;
-
-	always @(posedge clk) begin
+	always @(posedge count[3]) begin
       	if(reset)
             lfsr <= 4'd1;
-			else
+         else
             lfsr <= {lfsr[1:0] , feed_back};
-      end
+   end
            
 
    // Instantiate the Tiny Tapeout module.
