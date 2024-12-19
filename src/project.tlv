@@ -110,7 +110,7 @@ module top(input logic clk, input logic reset, input logic [31:0] cyc_cnt, outpu
    logic [3:0] random_number;
    logic feed_back;
    logic [3:0]lfsr;
-	logic [3:0]count;
+	logic [7:0]count;
    assign feed_back = lfsr[2] ^ lfsr[0] ;
    assign random_number = lfsr;
    
@@ -119,13 +119,13 @@ module top(input logic clk, input logic reset, input logic [31:0] cyc_cnt, outpu
    always @(posedge clk)begin
       if(reset)
          count = 0;
-      else if (count == 'hF) 
+      else if (count == 'hFF) 
          count = 0;
       else
          count = count + 1;
       end
 
-	always @(posedge count[3]) begin
+	always @(posedge count[5]) begin
       	if(reset)
             lfsr <= 4'd1;
          else
@@ -136,7 +136,7 @@ module top(input logic clk, input logic reset, input logic [31:0] cyc_cnt, outpu
    // Instantiate the Tiny Tapeout module.
    m5_user_module_name tt(.*);
    
-   assign passed = top.cyc_cnt > 80;
+   assign passed = top.cyc_cnt > 3000;
    assign failed = 1'b0;
 endmodule
 
