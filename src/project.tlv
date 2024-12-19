@@ -49,18 +49,24 @@
    // ==================
    
    // Note that pipesignals assigned here can be found under /fpga_pins/fpga.
+   
    |pipe
       m5+PmodKYPD(|pipe, /keypad, @0, $num[3:0], 1'b1, ['left:40, top: 80, width: 20, height: 20'])
-      @0 
+      @0
          $reset = *reset;
-         $num[3:0] = *ui_in[3:0];
          
+         //$match = ($num == *random_number);
+         //$count= >>1$score;
       @1
-         m5+sseg_decoder($segments_n, top.random_number[3:0])
-         //*uo_out[7:0] = {1'b0 , ~ $segments_n} ;
-         *uo_out = /keypad$sampling ? {4'b0, /keypad$sample_row_mask} : {1'b0 , ~ $segments_n};
+         //?$match
+         //   $score[3:0] = $count + 1'b1;
+         $num[3:0] = *ui_in[3:0];
+         m5+sseg_decoder($segments_n, *uio_out)
+         *uo_out[7:0] = {1'b0 , ~ $segments_n} ;
+         //*uo_out = /keypad$sampling ? {4'b0, /keypad$sample_row_mask} : {1'b0 , ~ $segments_n};
    
    
+     
    
    // Connect Tiny Tapeout outputs. Note that uio_ outputs are not available in the Tiny-Tapeout-3-based FPGA boards.
    *uo_out = 8'b0;
@@ -107,32 +113,6 @@ module top(input logic clk, input logic reset, input logic [31:0] cyc_cnt, outpu
       // ...etc.
    end
    */
-   logic [3:0] random_number;
-   logic feed_back;
-   logic [3:0]lfsr;
-	logic [7:0]count;
-   assign feed_back = lfsr[2] ^ lfsr[0] ;
-   assign random_number = lfsr;
-   
-   initial lfsr = 1'd1;
-   
-   always @(posedge clk)begin
-      if(reset)
-         count = 0;
-      else if (count == 'hFF) 
-         count = 0;
-      else
-         count = count + 1;
-      end
-
-	always @(posedge count[5]) begin
-      	if(reset)
-            lfsr <= 4'd1;
-         else
-            lfsr <= {lfsr[1:0] , feed_back};
-   end
-           
-
    // Instantiate the Tiny Tapeout module.
    m5_user_module_name tt(.*);
    
@@ -153,7 +133,7 @@ m5_if(m5_debounce_inputs, ['m5_tt_top(m5_my_design)'])
 
 module m5_user_module_name (
     input  wire [7:0] ui_in,    // Dedicated inputs - connected to the input switches
-    output wire [7:0] uo_out,   // Dedicated outputs - connected to the 7 segment display
+    output logic [7:0] uo_out,   // Dedicated outputs - connected to the 7 segment display
     m5_if_eq(m5_target, FPGA, ['/']['*'])   // The FPGA is based on TinyTapeout 3 which has no bidirectional I/Os (vs. TT6 for the ASIC).
     input  wire [7:0] uio_in,   // IOs: Bidirectional Input path
     output wire [7:0] uio_out,  // IOs: Bidirectional Output path
@@ -161,12 +141,14 @@ module m5_user_module_name (
     m5_if_eq(m5_target, FPGA, ['*']['/'])
     input  wire       ena,      // will go high when the design is enabled
     input  wire       clk,      // clock
-    input  wire       rst_n     // reset_n - low to reset
+    input  wire       rst_n    // reset_n - low to reset
 );
    wire reset = ! rst_n;
 
    // List all potentially-unused inputs to prevent warnings
    wire _unused = &{ena, clk, rst_n, 1'b0};
+   
+   
 
 \TLV
    /* verilator lint_off UNOPTFLAT */
@@ -179,6 +161,96 @@ module m5_user_module_name (
    // your Verilog logic goes here.
    // Note, output assignments are in my_design.
    // ==========================================
+   logic [7:0] random_number;
+   logic feed_back;
+   logic [7:0]lfsr;
+	logic [7:0]count;
+   logic match;
+   logic [7:0] score ;
+   
+   assign feed_back = lfsr[2] ^ lfsr[1] ;
 
+   //assign uio_out = score;
+   
+   initial lfsr = 8'd1;
+   
+   always @(posedge clk)begin
+      if(reset)
+         count <= 0;
+      else if (count == 'hFF) 
+         count <= 0;
+      else
+         count <= count + 1;
+      end
+
+	always @(posedge count[6]) begin
+      	if(reset)
+            lfsr <= 8'd1;
+         else
+            lfsr <= {5'b0,lfsr[1:0],feed_back };
+   end
+   
+   assign random_number = lfsr;
+   assign match = ({4'b0,ui_in[3:0]} == random_number) ? 1'b1 : 1'b0;
+   
+   always @(posedge count[5])begin
+      	if(match)
+            score <= score + 1'b1;
+      	else if (pstate == INIT)
+            score <= 0;
+          else
+            score <= score;
+      end
+
+reg [1:0]pstate,nstate;        
+parameter INIT=2'b00, START=2'b01, CAPTURE=2'b10, PRINT=2'b11;
+logic [2:0] player;
+   
+initial player = 1;
+// Function to generate a random number (using the LFSR state)
+function [2:0] generate_random;
+   input [2:0] lfsr;  // LFSR state
+ begin
+  // Shift the LFSR and insert the feedback value into the LSB
+ generate_random = {lfsr[1:0], feed_back};
+ end
+endfunction
+   
+ always @(posedge clk,negedge rst_n)
+     begin
+       if(!rst_n)
+         pstate<=INIT;
+       else
+         pstate<=nstate;
+     end
+   
+ always @(posedge clk)
+     begin
+       case(pstate)
+           INIT:begin
+                 player <= player + 1'd1;
+                 uio_out <= player;
+                 nstate <= START;
+                end
+          START:begin
+             	 uio_out  <=  'hFF ; //ALL BITS ARE ON INDICATING START
+                nstate <= CAPTURE;
+             end
+          CAPTURE:begin
+                   //random_number = generate_random(lfsr);
+                   uio_out  <= random_number;
+						for (byte i = 0 ; i<10 ; i++)begin
+                     if (i<10) nstate <= CAPTURE;
+                     else nstate <= PRINT;
+                  end
+                 end
+          PRINT : begin
+             		uio_out <= score;
+             		nstate <= INIT;
+             end
+
+       endcase
+     end
+   
 \SV
 endmodule
