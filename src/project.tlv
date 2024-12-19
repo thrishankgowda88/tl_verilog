@@ -32,16 +32,13 @@
    // If debouncing, a user's module is within a wrapper, so it has a different name.
    var(user_module_name, m5_if(m5_debounce_inputs, my_design, m5_my_design))
    var(debounce_cnt, m5_if_defined_as(MAKERCHIP, 1, 8'h03, 8'hff))
-   //m5_var(MAKERCHIP, 0)
-   if_def(MAKERCHIP, , ['m5_var(MAKERCHIP, 0)'])
 
 \SV
    // Include Tiny Tapeout Lab.
    m4_include_lib(['https:/']['/raw.githubusercontent.com/os-fpga/Virtual-FPGA-Lab/5744600215af09224b7235479be84c30c6e50cb7/tlv_lib/tiny_tapeout_lib.tlv'])
+ 	//m4_include_lib(['https:/']['/raw.githubusercontent.com/os-fpga/Virtual-FPGA-Lab/5744600215af09224b7235479be84c30c6e50cb7/tlv_lib/tiny_tapeout_lib.tlv'])
    m4_include_lib(https://raw.githubusercontent.com/stevehoover/gian-course/9ce47c64c435ae69c2d2c3733f86abfe158d8276/reference_designs/PmodKYPD.tlv)
-
-
-
+	
 \TLV my_design()
    
    
@@ -52,26 +49,22 @@
    // |                |
    // ==================
    
+   // Note that pipesignals assigned here can be found under /fpga_pins/fpga.
    |pipe
+      m5+PmodKYPD(|pipe, /keypad, @0, $num[3:0], 1'b1, ['left:40, top: 80, width: 20, height: 20'])
       @0 
          $reset = *reset;
-         
-        
          $num[3:0] = *ui_in[3:0];
          
-      m5+PmodKYPD(|pipe, /keypad, @0, $num[3:0], 1'b1, ['left:40, top: 80, width: 20, height: 20'])
       @1
-         
-         m5+sseg_decoder($segments_n, /keypad$digit_pressed[3:0])
+         m5+sseg_decoder($segments_n, top.random_number[3:0])
          //*uo_out[7:0] = {1'b0 , ~ $segments_n} ;
          *uo_out = /keypad$sampling ? {4'b0, /keypad$sample_row_mask} : {1'b0 , ~ $segments_n};
-   // Note that pipesignals assigned here can be found under /fpga_pins/fpga.
-   
    
    
    
    // Connect Tiny Tapeout outputs. Note that uio_ outputs are not available in the Tiny-Tapeout-3-based FPGA boards.
-   //*uo_out = 8'b0;
+   *uo_out = 8'b0;
    m5_if_neq(m5_target, FPGA, ['*uio_out = 8'b0;'])
    m5_if_neq(m5_target, FPGA, ['*uio_oe = 8'b0;'])
 
@@ -115,6 +108,20 @@ module top(input logic clk, input logic reset, input logic [31:0] cyc_cnt, outpu
       // ...etc.
    end
    */
+   logic [3:0] random_number;
+ 	logic feed_back;
+	logic [3:0]lfsr;
+
+	assign feed_back = lfsr[2] ^ lfsr[0] ;
+	assign random_number = lfsr;
+
+	always @(posedge clk) begin
+      	if(reset)
+            lfsr <= 4'd1;
+			else
+            lfsr <= {lfsr[1:0] , feed_back};
+      end
+           
 
    // Instantiate the Tiny Tapeout module.
    m5_user_module_name tt(.*);
@@ -165,4 +172,3 @@ module m5_user_module_name (
 
 \SV
 endmodule
-
